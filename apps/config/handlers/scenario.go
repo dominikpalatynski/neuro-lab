@@ -4,10 +4,12 @@ import (
 	"database"
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"config/types"
 	"config/utils"
 
+	"github.com/go-chi/chi/v5"
 	"gorm.io/gorm"
 )
 
@@ -216,6 +218,42 @@ func (h *ScenarioHandler) GetScenario(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewEncoder(w).Encode(scenario); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (h *ScenarioHandler) GetScenarios(w http.ResponseWriter, r *http.Request) {
+	scenarios := []database.Scenario{}
+	result := h.db.Preload("TestSession").Preload("ScenarioConditions").Preload("ScenarioConditions.ConditionValue").Find(&scenarios)
+	if result.Error != nil {
+		http.Error(w, result.Error.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := json.NewEncoder(w).Encode(scenarios); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (h *ScenarioHandler) GetScenariosByTestSession(w http.ResponseWriter, r *http.Request) {
+	testSessionIDStr := chi.URLParam(r, "testSessionID")
+	testSessionID64, err := strconv.ParseUint(testSessionIDStr, 10, 32)
+	if err != nil {
+		http.Error(w, "Invalid test session ID: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	testSessionID := uint(testSessionID64)
+
+	scenarios := []database.Scenario{}
+	result := h.db.Preload("TestSession").Preload("ScenarioConditions").Preload("ScenarioConditions.ConditionValue").Where("test_session_id = ?", testSessionID).Find(&scenarios)
+	if result.Error != nil {
+		http.Error(w, result.Error.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := json.NewEncoder(w).Encode(scenarios); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

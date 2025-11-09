@@ -4,10 +4,12 @@ import (
 	"database"
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"config/types"
 	"config/utils"
 
+	"github.com/go-chi/chi/v5"
 	"gorm.io/gorm"
 )
 
@@ -136,6 +138,42 @@ func (h *TestSessionHandler) GetTestSession(w http.ResponseWriter, r *http.Reque
 	}
 
 	if err := json.NewEncoder(w).Encode(testSession); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (h *TestSessionHandler) GetTestSessions(w http.ResponseWriter, r *http.Request) {
+	testSessions := []database.TestSession{}
+	result := h.db.Find(&testSessions)
+	if result.Error != nil {
+		http.Error(w, result.Error.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := json.NewEncoder(w).Encode(testSessions); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (h *TestSessionHandler) GetTestSessionsByDevice(w http.ResponseWriter, r *http.Request) {
+	deviceIDStr := chi.URLParam(r, "deviceID")
+	deviceID64, err := strconv.ParseUint(deviceIDStr, 10, 32)
+	if err != nil {
+		http.Error(w, "Invalid device ID: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	deviceID := uint(deviceID64)
+
+	testSessions := []database.TestSession{}
+	result := h.db.Where("device_id = ?", deviceID).Find(&testSessions)
+	if result.Error != nil {
+		http.Error(w, result.Error.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := json.NewEncoder(w).Encode(testSessions); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

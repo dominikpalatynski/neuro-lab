@@ -125,3 +125,17 @@ func (h *ConditionHandler) GetCondition(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 }
+
+func (h *ConditionHandler) GetConditions(w http.ResponseWriter, r *http.Request) {
+	conditions := []database.Condition{}
+	result := h.db.Find(&conditions)
+	if result.Error != nil {
+		http.Error(w, result.Error.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := json.NewEncoder(w).Encode(conditions); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}

@@ -48,6 +48,7 @@ func (s *Server) Start() {
 			r.Put("/{id}", s.deviceHandler.UpdateDevice)
 			r.Delete("/{id}", s.deviceHandler.DeleteDevice)
 			r.Get("/{id}", s.deviceHandler.GetDevice)
+			r.Get("/", s.deviceHandler.GetDevices)
 		})
 
 		r.Route("/test-session", func(r chi.Router) {
@@ -55,6 +56,7 @@ func (s *Server) Start() {
 			r.Put("/{id}", s.testSessionHandler.UpdateTestSession)
 			r.Delete("/{id}", s.testSessionHandler.DeleteTestSession)
 			r.Get("/{id}", s.testSessionHandler.GetTestSession)
+			r.Get("/list/{deviceID}", s.testSessionHandler.GetTestSessionsByDevice)
 		})
 
 		r.Route("/condition", func(r chi.Router) {
@@ -62,6 +64,7 @@ func (s *Server) Start() {
 			r.Put("/{id}", s.conditionHandler.UpdateCondition)
 			r.Delete("/{id}", s.conditionHandler.DeleteCondition)
 			r.Get("/{id}", s.conditionHandler.GetCondition)
+			r.Get("/", s.conditionHandler.GetConditions)
 		})
 
 		r.Route("/condition-value", func(r chi.Router) {
@@ -69,6 +72,8 @@ func (s *Server) Start() {
 			r.Put("/{id}", s.conditionValueHandler.UpdateConditionValue)
 			r.Delete("/{id}", s.conditionValueHandler.DeleteConditionValue)
 			r.Get("/{id}", s.conditionValueHandler.GetConditionValue)
+			r.Get("/", s.conditionValueHandler.GetConditionValues)
+			r.Get("/list/{conditionID}", s.conditionValueHandler.GetConditionValuesByCondition)
 		})
 
 		r.Route("/scenario", func(r chi.Router) {
@@ -77,6 +82,7 @@ func (s *Server) Start() {
 			r.Put("/{id}", s.scenarioHandler.UpdateScenario)
 			r.Delete("/{id}", s.scenarioHandler.DeleteScenario)
 			r.Get("/{id}", s.scenarioHandler.GetScenario)
+			r.Get("/list/{testSessionID}", s.scenarioHandler.GetScenariosByTestSession)
 		})
 
 		r.Route("/scenario-condition", func(r chi.Router) {

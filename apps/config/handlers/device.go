@@ -131,3 +131,17 @@ func (h *DeviceHandler) GetDevice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
+func (h *DeviceHandler) GetDevices(w http.ResponseWriter, r *http.Request) {
+	devices := []database.Device{}
+	result := h.db.Find(&devices)
+	if result.Error != nil {
+		http.Error(w, result.Error.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := json.NewEncoder(w).Encode(devices); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}

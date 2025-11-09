@@ -4,10 +4,12 @@ import (
 	"database"
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"config/types"
 	"config/utils"
 
+	"github.com/go-chi/chi/v5"
 	"gorm.io/gorm"
 )
 
@@ -149,6 +151,42 @@ func (h *ConditionValueHandler) GetConditionValue(w http.ResponseWriter, r *http
 	}
 
 	if err := json.NewEncoder(w).Encode(conditionValue); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (h *ConditionValueHandler) GetConditionValues(w http.ResponseWriter, r *http.Request) {
+	conditionValues := []database.ConditionValue{}
+	result := h.db.Preload("Condition").Find(&conditionValues)
+	if result.Error != nil {
+		http.Error(w, result.Error.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := json.NewEncoder(w).Encode(conditionValues); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (h *ConditionValueHandler) GetConditionValuesByCondition(w http.ResponseWriter, r *http.Request) {
+	conditionIDStr := chi.URLParam(r, "conditionID")
+	conditionID64, err := strconv.ParseUint(conditionIDStr, 10, 32)
+	if err != nil {
+		http.Error(w, "Invalid condition ID: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	conditionID := uint(conditionID64)
+
+	conditionValues := []database.ConditionValue{}
+	result := h.db.Preload("Condition").Where("condition_id = ?", conditionID).Find(&conditionValues)
+	if result.Error != nil {
+		http.Error(w, result.Error.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := json.NewEncoder(w).Encode(conditionValues); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
