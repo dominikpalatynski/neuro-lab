@@ -12,6 +12,7 @@ import (
 func main() {
 	r := chi.NewRouter()
 	db := database.Connect()
+	db.AutoMigrate(&database.Device{}, &database.TestSession{}, &database.Scenario{}, &database.ScenarioCondition{}, &database.ConditionValue{})
 
 	srv := server.NewServer(db, r)
 	srv.Start()
