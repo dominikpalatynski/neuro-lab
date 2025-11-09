@@ -1,0 +1,16 @@
+
+#grafana
+docker/grafana/data/
+
+#mosquitto
+docker/mosquitto/data/
+docker/mosquitto/log/
+
+#timescaledb
+docker/timescaledb/data/
+
+#redpanda
+docker/redpanda/data/
+
+#prometheus
+docker/prometheus/data/
