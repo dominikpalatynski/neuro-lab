@@ -4,37 +4,18 @@ Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"cli/pkg/config"
 	"cli/pkg/util"
 	"encoding/json"
 	"fmt"
-	"os"
-	"path/filepath"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v3"
 )
 
 // Device represents a device from the API response
 type Device struct {
 	ID   uint   `json:"ID"`
 	Name string `json:"name"`
-}
-
-// Config represents the structure of the config file
-type Config struct {
-	Devices       []DeviceWrapper `yaml:"devices"`
-	CurrentDevice string          `yaml:"current_device,omitempty"`
-}
-
-// DeviceWrapper wraps a device in the YAML structure
-type DeviceWrapper struct {
-	Device DeviceInfo `yaml:"device"`
-}
-
-// DeviceInfo contains the device information for config
-type DeviceInfo struct {
-	Name     string `yaml:"name"`
-	DeviceID uint   `yaml:"device_id"`
 }
 
 // initCmd represents the init command
@@ -47,8 +28,15 @@ to interact with registered devices.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("Initializing neuro-lab configuration...")
 
+		// Initialize config system (creates directory if needed)
+		if err := config.Initialize(cfgFile); err != nil {
+			fmt.Printf("Error initializing config: %v\n", err)
+			return
+		}
+
 		// Fetch devices from API
-		apiURL := "http://localhost:3002/api/v1/device"
+		apiEndpoint := config.GetAPIEndpoint()
+		apiURL := apiEndpoint + "/device"
 		body, err := util.SendRequest("GET", apiURL, nil)
 		if err != nil {
 			fmt.Printf("Error fetching devices from API: %v\n", err)
@@ -63,51 +51,26 @@ to interact with registered devices.`,
 		}
 
 		// Convert to config format
-		var deviceWrappers []DeviceWrapper
+		var deviceWrappers []config.DeviceWrapper
 		for _, device := range devices {
-			deviceWrappers = append(deviceWrappers, DeviceWrapper{
-				Device: DeviceInfo{
+			deviceWrappers = append(deviceWrappers, config.DeviceWrapper{
+				Device: config.DeviceInfo{
 					Name:     device.Name,
 					DeviceID: device.ID,
 				},
 			})
 		}
 
-		config := Config{
-			Devices: deviceWrappers,
-		}
-
-		// Marshal to YAML
-		yamlData, err := yaml.Marshal(&config)
-		if err != nil {
-			fmt.Printf("Error creating YAML configuration: %v\n", err)
-			return
-		}
-
-		// Get home directory
-		homeDir, err := os.UserHomeDir()
-		if err != nil {
-			fmt.Printf("Error getting home directory: %v\n", err)
-			return
-		}
-
-		// Create config directory
-		configDir := filepath.Join(homeDir, ".neurolab")
-		if err := os.MkdirAll(configDir, 0755); err != nil {
-			fmt.Printf("Error creating config directory: %v\n", err)
-			return
-		}
-
-		// Write config file
-		configPath := filepath.Join(configDir, "config")
-		if err := os.WriteFile(configPath, yamlData, 0644); err != nil {
-			fmt.Printf("Error writing config file: %v\n", err)
+		// Save devices to config
+		if err := config.SetDevices(deviceWrappers); err != nil {
+			fmt.Printf("Error saving devices to config: %v\n", err)
 			return
 		}
 
 		fmt.Printf("✓ Configuration initialized successfully\n")
 		fmt.Printf("✓ Found %d device(s)\n", len(devices))
-		fmt.Printf("✓ Config saved to: %s\n", configPath)
+		fmt.Printf("✓ Config saved to: %s\n", config.ConfigFileUsed())
+		fmt.Printf("\nUse 'cli use <device-name>' to select a device\n")
 	},
 }
 

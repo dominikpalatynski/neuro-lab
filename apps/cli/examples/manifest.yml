@@ -1,0 +1,19 @@
+kind TestSessionTemplate:
+  name: test-session-template
+  description: "Test session template"
+  conditions:
+    - name: condition1
+      value: "value1"
+    - name: condition2
+      value: "value2"
+  scenarios:
+    - name: scenario1
+      description: "Scenario 1"
+      conditions:
+        - name: condition1
+          value: "value1"
+    - name: scenario2
+      description: "Scenario 2"
+      conditions:
+        - name: condition2
+          value: "value2"

@@ -4,71 +4,32 @@ Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"cli/pkg/config"
 	"fmt"
-	"os"
-	"path/filepath"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v3"
 )
 
 // useCmd represents the use command
 var useCmd = &cobra.Command{
-	Use:   "use [device]",
-	Short: "Switch to a device",
-	Long:  `Use a device to run tests`,
-	Run: func(cmd *cobra.Command, args []string) {
-		homeDir, err := os.UserHomeDir()
-		if err != nil {
-			fmt.Println("Error: ", err)
-			return
-		}
-		configPath := filepath.Join(homeDir, ".neurolab", "config")
-		var config Config
-		data, err := os.ReadFile(configPath)
-		if err != nil {
-			fmt.Println("Error: ", err)
-			return
-		}
-		err = yaml.Unmarshal(data, &config)
-		if err != nil {
-			fmt.Println("Error: ", err)
-			return
-		}
+	Use:   "use [device-name]",
+	Short: "Switch to a specific device",
+	Long: `Switch the current device context. This device will be used
+for subsequent commands like creating test sessions.
 
-		if len(args) == 0 {
-			fmt.Println("Device name is required")
-			return
-		}
-
+Example:
+  cli use device-name`,
+	Args: cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
 		deviceName := args[0]
 
-		found := false
-		for _, d := range config.Devices {
-			if d.Device.Name == deviceName {
-				config.CurrentDevice = d.Device.Name
-				found = true
-				break
-			}
+		// Set the current device (validates it exists)
+		if err := config.SetCurrentDevice(deviceName); err != nil {
+			return fmt.Errorf("failed to set current device: %w", err)
 		}
 
-		if !found {
-			fmt.Println("Device not found")
-			return
-		}
-
-		yamlData, err := yaml.Marshal(&config)
-		if err != nil {
-			fmt.Printf("Error creating YAML configuration: %v\n", err)
-			return
-		}
-
-		if err := os.WriteFile(configPath, yamlData, 0644); err != nil {
-			fmt.Printf("Error writing config file: %v\n", err)
-			return
-		}
-
-		fmt.Println("Current device: ", config.CurrentDevice)
+		fmt.Printf("✓ Current device set to: %s\n", deviceName)
+		return nil
 	},
 }
 

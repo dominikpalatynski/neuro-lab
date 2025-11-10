@@ -4,38 +4,27 @@ Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"cli/pkg/config"
 	"fmt"
-	"os"
-	"path/filepath"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v3"
 )
 
 // currentDeviceCmd represents the currentDevice command
 var currentDeviceCmd = &cobra.Command{
-	Use:   "currentDevice",
-	Short: "Show the current device",
-	Long:  `Show the current device that is being used`,
-	Run: func(cmd *cobra.Command, args []string) {
-		homeDir, err := os.UserHomeDir()
+	Use:   "current-device",
+	Short: "Display the currently selected device",
+	Long: `Display the currently selected device context.
+This device is used for creating test sessions and other operations.`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		// Get full device info
+		deviceInfo, err := config.GetCurrentDeviceInfo()
 		if err != nil {
-			fmt.Println("Error: ", err)
-			return
+			return fmt.Errorf("no device selected: %w\nRun 'cli init' to fetch devices and 'cli use <device-name>' to select one", err)
 		}
-		configPath := filepath.Join(homeDir, ".neurolab", "config")
-		var config Config
-		data, err := os.ReadFile(configPath)
-		if err != nil {
-			fmt.Println("Error: ", err)
-			return
-		}
-		err = yaml.Unmarshal(data, &config)
-		if err != nil {
-			fmt.Println("Error: ", err)
-			return
-		}
-		fmt.Println("Current device: ", config.CurrentDevice)
+
+		fmt.Printf("Current device: %s (ID: %d)\n", deviceInfo.Name, deviceInfo.DeviceID)
+		return nil
 	},
 }
 
