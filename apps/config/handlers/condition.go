@@ -5,9 +5,10 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"config/errors"
 	"config/types"
 	"config/utils"
+
+	apierrors "github.com/neuro-lab/errors"
 
 	"gorm.io/gorm"
 )
@@ -23,12 +24,12 @@ func NewConditionHandler(db *gorm.DB) *ConditionHandler {
 func (h *ConditionHandler) CreateCondition(w http.ResponseWriter, r *http.Request) {
 	var req types.CreateConditionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		errors.WriteError(w, errors.NewBadRequestError("Invalid request body: "+err.Error(), r.URL.Path))
+		apierrors.WriteError(w, apierrors.NewBadRequestError("Invalid request body: "+err.Error(), r.URL.Path))
 		return
 	}
 
 	if err := validate.Struct(req); err != nil {
-		errors.WriteError(w, errors.NewValidationError(err, r.URL.Path))
+		apierrors.WriteError(w, apierrors.NewValidationError(err, r.URL.Path))
 		return
 	}
 
@@ -38,7 +39,7 @@ func (h *ConditionHandler) CreateCondition(w http.ResponseWriter, r *http.Reques
 
 	result := h.db.Create(&condition)
 	if result.Error != nil {
-		errors.WriteError(w, errors.NewDatabaseError(result.Error, r.URL.Path))
+		apierrors.WriteError(w, apierrors.NewDatabaseError(result.Error, r.URL.Path))
 		return
 	}
 
@@ -50,19 +51,19 @@ func (h *ConditionHandler) CreateCondition(w http.ResponseWriter, r *http.Reques
 func (h *ConditionHandler) UpdateCondition(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ParseID(r)
 	if err != nil {
-		errors.WriteError(w, errors.NewBadRequestError("Invalid condition ID: "+err.Error(), r.URL.Path))
+		apierrors.WriteError(w, apierrors.NewBadRequestError("Invalid condition ID: "+err.Error(), r.URL.Path))
 		return
 	}
 
 	var req types.UpdateConditionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		errors.WriteError(w, errors.NewBadRequestError("Invalid request body: "+err.Error(), r.URL.Path))
+		apierrors.WriteError(w, apierrors.NewBadRequestError("Invalid request body: "+err.Error(), r.URL.Path))
 		return
 	}
 	req.ID = id
 
 	if err := validate.Struct(req); err != nil {
-		errors.WriteError(w, errors.NewValidationError(err, r.URL.Path))
+		apierrors.WriteError(w, apierrors.NewValidationError(err, r.URL.Path))
 		return
 	}
 
@@ -73,7 +74,7 @@ func (h *ConditionHandler) UpdateCondition(w http.ResponseWriter, r *http.Reques
 
 	result := h.db.Save(&condition)
 	if result.Error != nil {
-		errors.WriteError(w, errors.NewDatabaseError(result.Error, r.URL.Path))
+		apierrors.WriteError(w, apierrors.NewDatabaseError(result.Error, r.URL.Path))
 		return
 	}
 
@@ -85,7 +86,7 @@ func (h *ConditionHandler) UpdateCondition(w http.ResponseWriter, r *http.Reques
 func (h *ConditionHandler) DeleteCondition(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ParseID(r)
 	if err != nil {
-		errors.WriteError(w, errors.NewBadRequestError("Invalid condition ID: "+err.Error(), r.URL.Path))
+		apierrors.WriteError(w, apierrors.NewBadRequestError("Invalid condition ID: "+err.Error(), r.URL.Path))
 		return
 	}
 
@@ -93,14 +94,14 @@ func (h *ConditionHandler) DeleteCondition(w http.ResponseWriter, r *http.Reques
 	condition := database.Condition{}
 	result := h.db.First(&condition, id)
 	if result.Error != nil {
-		errors.WriteError(w, errors.NewDatabaseError(result.Error, r.URL.Path))
+		apierrors.WriteError(w, apierrors.NewDatabaseError(result.Error, r.URL.Path))
 		return
 	}
 
 	// Delete the condition
 	result = h.db.Delete(&condition, id)
 	if result.Error != nil {
-		errors.WriteError(w, errors.NewDatabaseError(result.Error, r.URL.Path))
+		apierrors.WriteError(w, apierrors.NewDatabaseError(result.Error, r.URL.Path))
 		return
 	}
 
@@ -110,14 +111,14 @@ func (h *ConditionHandler) DeleteCondition(w http.ResponseWriter, r *http.Reques
 func (h *ConditionHandler) GetCondition(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.ParseID(r)
 	if err != nil {
-		errors.WriteError(w, errors.NewBadRequestError("Invalid condition ID: "+err.Error(), r.URL.Path))
+		apierrors.WriteError(w, apierrors.NewBadRequestError("Invalid condition ID: "+err.Error(), r.URL.Path))
 		return
 	}
 
 	condition := database.Condition{}
 	result := h.db.First(&condition, id)
 	if result.Error != nil {
-		errors.WriteError(w, errors.NewDatabaseError(result.Error, r.URL.Path))
+		apierrors.WriteError(w, apierrors.NewDatabaseError(result.Error, r.URL.Path))
 		return
 	}
 
@@ -130,7 +131,7 @@ func (h *ConditionHandler) GetConditions(w http.ResponseWriter, r *http.Request)
 	conditions := []database.Condition{}
 	result := h.db.Find(&conditions)
 	if result.Error != nil {
-		errors.WriteError(w, errors.NewDatabaseError(result.Error, r.URL.Path))
+		apierrors.WriteError(w, apierrors.NewDatabaseError(result.Error, r.URL.Path))
 		return
 	}
 
