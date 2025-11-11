@@ -33,7 +33,7 @@ var createDeviceCmd = &cobra.Command{
 			fmt.Println("Error: ", err)
 			return
 		}
-		fmt.Println("Response: ", string(resp))
+		fmt.Println("Response: ", resp.Body)
 	},
 }
 
@@ -47,7 +47,7 @@ var createTestSessionCmd = &cobra.Command{
 			fmt.Println("Error: ", err)
 			return
 		}
-		fmt.Println("Response: ", string(resp))
+		fmt.Println("Response: ", resp.Body)
 	},
 }
 
@@ -61,7 +61,7 @@ var createConditionCmd = &cobra.Command{
 			fmt.Println("Error: ", err)
 			return
 		}
-		fmt.Println("Response: ", string(resp))
+		fmt.Println("Response: ", resp.Body)
 	},
 }
 
@@ -75,7 +75,7 @@ var createConditionValueCmd = &cobra.Command{
 			fmt.Println("Error: ", err)
 			return
 		}
-		fmt.Println("Response: ", string(resp))
+		fmt.Println("Response: ", resp.Body)
 	},
 }
 
@@ -89,7 +89,7 @@ var createScenarioCmd = &cobra.Command{
 			fmt.Println("Error: ", err)
 			return
 		}
-		fmt.Println("Response: ", string(resp))
+		fmt.Println("Response: ", resp.Body)
 	},
 }
 
@@ -103,7 +103,7 @@ var createScenarioWithConditionValuesCmd = &cobra.Command{
 			fmt.Println("Error: ", err)
 			return
 		}
-		fmt.Println("Response: ", string(resp))
+		fmt.Println("Response: ", resp.Body)
 	},
 }
 

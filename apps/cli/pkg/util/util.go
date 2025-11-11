@@ -2,11 +2,17 @@ package util
 
 import (
 	"bytes"
+	"encoding/json"
 	"io"
 	"net/http"
 )
 
-func SendRequest(method string, url string, body []byte) ([]byte, error) {
+type Response struct {
+	Body       json.RawMessage `json:"body"`
+	StatusCode int             `json:"statusCode"`
+}
+
+func SendRequest(method string, url string, body []byte) (*Response, error) {
 	req, err := http.NewRequest(method, url, bytes.NewBuffer(body))
 	if err != nil {
 		return nil, err
@@ -17,5 +23,9 @@ func SendRequest(method string, url string, body []byte) ([]byte, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	return io.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(resp.Body)
+	return &Response{
+		Body:       json.RawMessage(respBody),
+		StatusCode: resp.StatusCode,
+	}, err
 }

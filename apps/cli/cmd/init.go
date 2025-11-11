@@ -37,7 +37,7 @@ to interact with registered devices.`,
 		// Fetch devices from API
 		apiEndpoint := config.GetAPIEndpoint()
 		apiURL := apiEndpoint + "/device"
-		body, err := util.SendRequest("GET", apiURL, nil)
+		resp, err := util.SendRequest("GET", apiURL, nil)
 		if err != nil {
 			fmt.Printf("Error fetching devices from API: %v\n", err)
 			return
@@ -45,7 +45,7 @@ to interact with registered devices.`,
 
 		// Parse JSON response
 		var devices []Device
-		if err := json.Unmarshal(body, &devices); err != nil {
+		if err := json.Unmarshal(resp.Body, &devices); err != nil {
 			fmt.Printf("Error parsing device response: %v\n", err)
 			return
 		}

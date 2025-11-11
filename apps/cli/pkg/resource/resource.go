@@ -8,6 +8,8 @@ import (
 
 	"cli/pkg/config"
 	"types"
+
+	apierrors "github.com/neuro-lab/errors"
 )
 
 func ApplyResource(manifest *manifest.Manifest) error {
@@ -39,11 +41,27 @@ func sendRequest(apiEndpoint string, singularName string, manifest *manifest.Man
 	if err != nil {
 		return err
 	}
+
+	fmt.Println("Applying ", manifest.Kind)
 	resp, err := util.SendRequest("POST", apiEndpoint+"/"+singularName, body)
 	if err != nil {
 		return err
 	}
-	fmt.Println(string(resp))
-	fmt.Println("Response: ", string(resp))
+
+	if resp.StatusCode >= 400 {
+		var errorResponse apierrors.ErrorResponse
+		if err := json.Unmarshal(resp.Body, &errorResponse); err != nil {
+			return fmt.Errorf("request failed with status %d: %s", resp.StatusCode, resp.Body)
+		}
+
+		if errorResponse.Type == apierrors.TypeValidationFailed {
+			return fmt.Errorf("%s: %s\n%v", errorResponse.Title, errorResponse.Detail, errorResponse.Errors)
+		}
+
+		return fmt.Errorf("%s: %s", errorResponse.Title, errorResponse.Detail)
+	}
+
+	// Success: status code is 2xx
+	fmt.Println("Resource applied successfully")
 	return nil
 }
