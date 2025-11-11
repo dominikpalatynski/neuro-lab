@@ -1,0 +1,9 @@
+apiVersion: neurolab.io/v1
+kind: Device
+metadata:
+  name: test-device
+spec:
+  description: "Test device"
+  capabilities:
+    - temperature-control
+    - humidity-control
