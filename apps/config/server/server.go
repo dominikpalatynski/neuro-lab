@@ -2,6 +2,7 @@ package server
 
 import (
 	"config/handlers"
+	apimiddleware "config/middleware"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -43,7 +44,11 @@ func NewServer(db *gorm.DB, r *chi.Mux) *Server {
 }
 
 func (s *Server) Start() {
+	// Add error handling and request tracking middleware
+	s.router.Use(apimiddleware.Recovery)
+	s.router.Use(apimiddleware.RequestID)
 	s.router.Use(middleware.Logger)
+	s.router.Use(apimiddleware.ErrorLogger)
 
 	s.router.Route("/api/v1", func(r chi.Router) {
 		r.Route("/", func(r chi.Router) {
