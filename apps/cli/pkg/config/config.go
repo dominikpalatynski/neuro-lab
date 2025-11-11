@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -334,4 +336,53 @@ func InvalidateDiscoveryCache() error {
 	}
 
 	return nil
+}
+
+// FetchAndCacheDiscovery fetches API resources from the discovery endpoint and caches them
+func FetchAndCacheDiscovery(apiEndpoint string) error {
+	// Make request to discovery endpoint (apiEndpoint already includes /api/v1)
+	discoveryURL := apiEndpoint
+
+	resp, err := http.Get(discoveryURL)
+	if err != nil {
+		return fmt.Errorf("failed to fetch discovery data: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("discovery endpoint returned status %d", resp.StatusCode)
+	}
+
+	// Read response body
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read discovery response: %w", err)
+	}
+
+	// Parse APIResourceList
+	var resourceList types.APIResourceList
+	if err := json.Unmarshal(body, &resourceList); err != nil {
+		return fmt.Errorf("failed to parse discovery response: %w", err)
+	}
+
+	// Cache the resources
+	if err := SetDiscoveryCache(resourceList.Resources); err != nil {
+		return fmt.Errorf("failed to cache discovery data: %w", err)
+	}
+
+	return nil
+}
+
+// GetDiscoveryResources returns cached API resources or empty slice if not cached
+func GetDiscoveryResources() ([]types.APIResource, error) {
+	cache, err := GetDiscoveryCache()
+	if err != nil {
+		return nil, err
+	}
+
+	if cache == nil {
+		return []types.APIResource{}, nil
+	}
+
+	return cache.Resources, nil
 }

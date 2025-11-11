@@ -67,6 +67,18 @@ to interact with registered devices.`,
 			return
 		}
 
+		// Fetch and cache API resources
+		fmt.Println("Fetching API resources...")
+		if err := config.FetchAndCacheDiscovery(apiEndpoint); err != nil {
+			// Don't fail the whole init if discovery fails
+			fmt.Printf("Warning: Failed to fetch API resources: %v\n", err)
+			fmt.Println("  (You can continue without discovery cache)")
+		} else {
+			// Get cached resources to show count
+			resources, _ := config.GetDiscoveryResources()
+			fmt.Printf("✓ Cached %d API resource type(s)\n", len(resources))
+		}
+
 		fmt.Printf("✓ Configuration initialized successfully\n")
 		fmt.Printf("✓ Found %d device(s)\n", len(devices))
 		fmt.Printf("✓ Config saved to: %s\n", config.ConfigFileUsed())
