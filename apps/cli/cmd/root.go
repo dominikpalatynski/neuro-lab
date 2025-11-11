@@ -1,14 +1,15 @@
 /*
 Copyright © 2025 NAME HERE <EMAIL ADDRESS>
-
 */
 package cmd
 
 import (
 	"os"
 
-	"github.com/spf13/cobra"
 	"cli/pkg/config"
+	"fmt"
+
+	"github.com/spf13/cobra"
 )
 
 var (
@@ -28,7 +29,22 @@ test sessions, conditions, and scenarios for neurological testing.`,
 		if cmd.Name() == "init" {
 			return nil
 		}
-		return config.Initialize(cfgFile)
+
+		// Initialize config system
+		if err := config.Initialize(cfgFile); err != nil {
+			return err
+		}
+
+		// Check if discovery cache is valid, fetch if not
+		if !config.IsDiscoveryCacheValid() {
+			// Cache is invalid or doesn't exist - fetch from API
+			apiEndpoint := config.GetAPIEndpoint()
+			if err := config.FetchAndCacheDiscovery(apiEndpoint); err != nil {
+				fmt.Println("Error fetching and caching discovery:", err)
+			}
+		}
+
+		return nil
 	},
 }
 
@@ -45,5 +61,3 @@ func init() {
 	// Add the persistent --config flag to the root command
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.neurolab/config.yaml)")
 }
-
-
