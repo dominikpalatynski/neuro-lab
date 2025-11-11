@@ -1,19 +1,23 @@
 package config
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 	"strings"
+	"time"
+	"types"
 
 	"github.com/spf13/viper"
 )
 
 // Config represents the application configuration
 type Config struct {
-	Devices       []DeviceWrapper `yaml:"devices" mapstructure:"devices"`
-	CurrentDevice string          `yaml:"current_device,omitempty" mapstructure:"current_device"`
-	APIEndpoint   string          `yaml:"api_endpoint,omitempty" mapstructure:"api_endpoint"`
+	Devices       []DeviceWrapper     `yaml:"devices" mapstructure:"devices"`
+	CurrentDevice string              `yaml:"current_device,omitempty" mapstructure:"current_device"`
+	APIEndpoint   string              `yaml:"api_endpoint,omitempty" mapstructure:"api_endpoint"`
+	APIResources  []types.APIResource `yaml:"api_resources,omitempty" mapstructure:"api_resources"`
 }
 
 // DeviceWrapper wraps a device for YAML structure
@@ -27,6 +31,14 @@ type DeviceInfo struct {
 	DeviceID uint   `yaml:"device_id" mapstructure:"device_id"`
 }
 
+// DiscoveryCache represents cached API resource discovery data
+type DiscoveryCache struct {
+	CachedAt   time.Time           `json:"cached_at"`
+	ExpiresAt  time.Time           `json:"expires_at"`
+	APIVersion string              `json:"api_version"`
+	Resources  []types.APIResource `json:"resources"`
+}
+
 const (
 	// DefaultAPIEndpoint is the default API base URL
 	DefaultAPIEndpoint = "http://localhost:3002/api/v1"
@@ -34,6 +46,12 @@ const (
 	ConfigDirName = ".neurolab"
 	// ConfigFileName is the name of the config file
 	ConfigFileName = "config"
+	// CacheDirName is the cache directory name
+	CacheDirName = "cache"
+	// DiscoveryCacheFileName is the name of the discovery cache file
+	DiscoveryCacheFileName = "api_resources.json"
+	// DiscoveryCacheTTL is how long the cache is valid
+	DiscoveryCacheTTL = 5 * time.Minute
 )
 
 // Initialize sets up the configuration system
@@ -213,4 +231,107 @@ func SetAPIEndpoint(endpoint string) error {
 // ConfigFileUsed returns the config file being used
 func ConfigFileUsed() string {
 	return viper.ConfigFileUsed()
+}
+
+// GetCachePath returns the full path to the cache directory
+func GetCachePath() (string, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("failed to get home directory: %w", err)
+	}
+	return home + "/" + ConfigDirName + "/" + CacheDirName, nil
+}
+
+// GetDiscoveryCache loads the cached discovery data from disk
+// Returns nil if cache doesn't exist or is invalid
+func GetDiscoveryCache() (*DiscoveryCache, error) {
+	cachePath, err := GetCachePath()
+	if err != nil {
+		return nil, err
+	}
+
+	cacheFile := cachePath + "/" + DiscoveryCacheFileName
+
+	// Check if file exists
+	if _, err := os.Stat(cacheFile); os.IsNotExist(err) {
+		return nil, nil // No cache file, not an error
+	}
+
+	// Read cache file
+	data, err := os.ReadFile(cacheFile)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read cache file: %w", err)
+	}
+
+	// Parse JSON
+	var cache DiscoveryCache
+	if err := json.Unmarshal(data, &cache); err != nil {
+		return nil, fmt.Errorf("failed to parse cache file: %w", err)
+	}
+
+	return &cache, nil
+}
+
+// SetDiscoveryCache saves discovery data to cache file
+func SetDiscoveryCache(resources []types.APIResource) error {
+	cachePath, err := GetCachePath()
+	if err != nil {
+		return err
+	}
+
+	// Ensure cache directory exists
+	if err := os.MkdirAll(cachePath, 0755); err != nil {
+		return fmt.Errorf("failed to create cache directory: %w", err)
+	}
+
+	// Create cache data with timestamps
+	now := time.Now()
+	cache := DiscoveryCache{
+		CachedAt:   now,
+		ExpiresAt:  now.Add(DiscoveryCacheTTL),
+		APIVersion: "v1",
+		Resources:  resources,
+	}
+
+	// Marshal to JSON
+	data, err := json.MarshalIndent(cache, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal cache data: %w", err)
+	}
+
+	// Write to file
+	cacheFile := cachePath + "/" + DiscoveryCacheFileName
+	if err := os.WriteFile(cacheFile, data, 0644); err != nil {
+		return fmt.Errorf("failed to write cache file: %w", err)
+	}
+
+	return nil
+}
+
+// IsDiscoveryCacheValid checks if the cached discovery data is still valid
+func IsDiscoveryCacheValid() bool {
+	cache, err := GetDiscoveryCache()
+	if err != nil || cache == nil {
+		return false
+	}
+
+	// Check if expired
+	return time.Now().Before(cache.ExpiresAt)
+}
+
+// InvalidateDiscoveryCache removes the discovery cache file
+func InvalidateDiscoveryCache() error {
+	cachePath, err := GetCachePath()
+	if err != nil {
+		return err
+	}
+
+	cacheFile := cachePath + "/" + DiscoveryCacheFileName
+
+	// Remove file (ignore error if doesn't exist)
+	if err := os.Remove(cacheFile); err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("failed to remove cache file: %w", err)
+	}
+
+	return nil
 }

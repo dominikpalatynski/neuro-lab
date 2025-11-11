@@ -17,6 +17,7 @@ type Server struct {
 	conditionValueHandler    *handlers.ConditionValueHandler
 	scenarioHandler          *handlers.ScenarioHandler
 	scenarioConditionHandler *handlers.ScenarioConditionHandler
+	discoveryHandler         *handlers.DiscoveryHandler
 }
 
 func NewServer(db *gorm.DB, r *chi.Mux) *Server {
@@ -26,6 +27,7 @@ func NewServer(db *gorm.DB, r *chi.Mux) *Server {
 	conditionValueHandler := handlers.NewConditionValueHandler(db)
 	scenarioHandler := handlers.NewScenarioHandler(db)
 	scenarioConditionHandler := handlers.NewScenarioConditionHandler(db)
+	discoveryHandler := handlers.NewDiscoveryHandler(db)
 
 	return &Server{
 		db:                       db,
@@ -36,6 +38,7 @@ func NewServer(db *gorm.DB, r *chi.Mux) *Server {
 		conditionValueHandler:    conditionValueHandler,
 		scenarioHandler:          scenarioHandler,
 		scenarioConditionHandler: scenarioConditionHandler,
+		discoveryHandler:         discoveryHandler,
 	}
 }
 
@@ -43,6 +46,10 @@ func (s *Server) Start() {
 	s.router.Use(middleware.Logger)
 
 	s.router.Route("/api/v1", func(r chi.Router) {
+		r.Route("/", func(r chi.Router) {
+			r.Get("/", s.discoveryHandler.GetAPIResources)
+		})
+
 		r.Route("/device", func(r chi.Router) {
 			r.Post("/", s.deviceHandler.CreateDevice)
 			r.Put("/{id}", s.deviceHandler.UpdateDevice)

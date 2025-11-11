@@ -6,4 +6,5 @@ use (
 	./apps/gateway
 	./apps/transformer
 	./pkg/database
+	./pkg/types
 )
