@@ -67,3 +67,7 @@ type UpdateScenarioConditionRequest struct {
 	ScenarioID       uint `json:"scenario_id" validate:"required"`
 	ConditionValueID uint `json:"condition_value_id" validate:"required"`
 }
+
+type ValidationRequest struct {
+	ScenarioID int `json:"scenario_id" validate:"required,gt=0"`
+}

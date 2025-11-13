@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"types"
 
-	"config/types"
 	"config/utils"
 
 	"github.com/go-chi/chi/v5"

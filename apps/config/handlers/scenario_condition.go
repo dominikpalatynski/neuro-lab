@@ -4,8 +4,8 @@ import (
 	"database"
 	"encoding/json"
 	"net/http"
+	"types"
 
-	"config/types"
 	"config/utils"
 
 	"gorm.io/gorm"

@@ -5,6 +5,7 @@ use (
 	./apps/config
 	./apps/gateway
 	./apps/transformer
+	./pkg/communication
 	./pkg/database
 	./pkg/errors
 	./pkg/types

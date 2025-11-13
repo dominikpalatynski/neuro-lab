@@ -9,15 +9,16 @@ import (
 )
 
 type Server struct {
-	db                       *gorm.DB
-	router                   *chi.Mux
-	deviceHandler            *handlers.DeviceHandler
-	testSessionHandler       *handlers.TestSessionHandler
-	conditionHandler         *handlers.ConditionHandler
-	conditionValueHandler    *handlers.ConditionValueHandler
-	scenarioHandler          *handlers.ScenarioHandler
-	scenarioConditionHandler *handlers.ScenarioConditionHandler
-	discoveryHandler         *handlers.DiscoveryHandler
+	db                         *gorm.DB
+	router                     *chi.Mux
+	deviceHandler              *handlers.DeviceHandler
+	testSessionHandler         *handlers.TestSessionHandler
+	conditionHandler           *handlers.ConditionHandler
+	conditionValueHandler      *handlers.ConditionValueHandler
+	scenarioHandler            *handlers.ScenarioHandler
+	scenarioConditionHandler   *handlers.ScenarioConditionHandler
+	scenarioValidationHandler  *handlers.ScenarioValidationHandler
+	discoveryHandler           *handlers.DiscoveryHandler
 }
 
 func NewServer(db *gorm.DB, r *chi.Mux) *Server {
@@ -27,18 +28,20 @@ func NewServer(db *gorm.DB, r *chi.Mux) *Server {
 	conditionValueHandler := handlers.NewConditionValueHandler(db)
 	scenarioHandler := handlers.NewScenarioHandler(db)
 	scenarioConditionHandler := handlers.NewScenarioConditionHandler(db)
+	scenarioValidationHandler := handlers.NewScenarioValidationHandler(db)
 	discoveryHandler := handlers.NewDiscoveryHandler(db)
 
 	return &Server{
-		db:                       db,
-		router:                   r,
-		deviceHandler:            deviceHandler,
-		testSessionHandler:       testSessionHandler,
-		conditionHandler:         conditionHandler,
-		conditionValueHandler:    conditionValueHandler,
-		scenarioHandler:          scenarioHandler,
-		scenarioConditionHandler: scenarioConditionHandler,
-		discoveryHandler:         discoveryHandler,
+		db:                        db,
+		router:                    r,
+		deviceHandler:             deviceHandler,
+		testSessionHandler:        testSessionHandler,
+		conditionHandler:          conditionHandler,
+		conditionValueHandler:     conditionValueHandler,
+		scenarioHandler:           scenarioHandler,
+		scenarioConditionHandler:  scenarioConditionHandler,
+		scenarioValidationHandler: scenarioValidationHandler,
+		discoveryHandler:          discoveryHandler,
 	}
 }
 
@@ -50,6 +53,8 @@ func (s *Server) Start() {
 		r.Route("/", func(r chi.Router) {
 			r.Get("/", s.discoveryHandler.GetAPIResources)
 		})
+
+		r.Post("/scenario-validation", s.scenarioValidationHandler.ValidateScenario)
 
 		r.Route("/device", func(r chi.Router) {
 			r.Post("/", s.deviceHandler.CreateDevice)

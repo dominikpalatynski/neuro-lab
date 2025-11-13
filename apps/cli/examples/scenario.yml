@@ -2,5 +2,5 @@ apiVersion: neurolab.io/v1
 kind: Scenario
 spec:
   name: "Test Scenario"
-  test_session_d: 5
+  test_session_id: 7
   condtin_value_ids: [3, 4]
