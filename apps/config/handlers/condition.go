@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"config/types"
 	"config/utils"
+	"types"
 
 	apierrors "github.com/neuro-lab/errors"
 

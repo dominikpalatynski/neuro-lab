@@ -1,0 +1,5 @@
+apiVersion: neurolab.io/v1
+kind: TestSession
+spec:
+  name: "Test Session"
+  device_id: 9

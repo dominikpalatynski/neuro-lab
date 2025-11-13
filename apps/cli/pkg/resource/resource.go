@@ -62,6 +62,9 @@ func sendRequest(apiEndpoint string, singularName string, manifest *manifest.Man
 	}
 
 	// Success: status code is 2xx
-	fmt.Println("Resource applied successfully")
+	fmt.Println(manifest.Kind, " applied successfully")
+	fmt.Println("--------------------------------")
+	fmt.Println(string(resp.Body))
+	fmt.Println("--------------------------------")
 	return nil
 }

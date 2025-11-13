@@ -1,0 +1,4 @@
+apiVersion: neurolab.io/v1
+kind: Condition
+spec:
+  name: "Test Condition"

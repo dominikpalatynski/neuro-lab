@@ -1,0 +1,5 @@
+apiVersion: neurolab.io/v1
+kind: ConditionValue
+spec:
+  value: "230"
+  condition_id: 3

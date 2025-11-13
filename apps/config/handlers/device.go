@@ -4,9 +4,10 @@ import (
 	"database"
 	"encoding/json"
 	"net/http"
+	"types"
 
-	"config/types"
 	"config/utils"
+
 	apierrors "github.com/neuro-lab/errors"
 
 	"github.com/go-playground/validator/v10"
