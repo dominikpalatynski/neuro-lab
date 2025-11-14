@@ -10,6 +10,7 @@ import (
 	"config/utils"
 
 	"github.com/go-chi/chi/v5"
+	apierrors "github.com/neuro-lab/errors"
 	"gorm.io/gorm"
 )
 
@@ -257,4 +258,88 @@ func (h *ScenarioHandler) GetScenariosByTestSession(w http.ResponseWriter, r *ht
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
+
+func (h *ScenarioHandler) ActivateScenario(w http.ResponseWriter, r *http.Request) {
+	id, err := utils.ParseID(r)
+	if err != nil {
+		apierrors.WriteError(w, apierrors.NewBadRequestError("Invalid scenario ID: "+err.Error(), r.URL.Path))
+		return
+	}
+
+	scenario := database.Scenario{}
+	if result := h.db.First(&scenario, id); result.Error != nil {
+		apierrors.WriteError(w, apierrors.NewDatabaseError(result.Error, r.URL.Path))
+		return
+	}
+
+	if scenario.Status == database.StatusActive {
+		apierrors.WriteError(w, apierrors.NewBadRequestError("Scenario is already active", r.URL.Path))
+		return
+	}
+
+	scenario.Status = database.StatusActive
+	result := h.db.Save(&scenario)
+	if result.Error != nil {
+		apierrors.WriteError(w, apierrors.NewDatabaseError(result.Error, r.URL.Path))
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *ScenarioHandler) DeactivateScenario(w http.ResponseWriter, r *http.Request) {
+	id, err := utils.ParseID(r)
+	if err != nil {
+		apierrors.WriteError(w, apierrors.NewBadRequestError("Invalid scenario ID: "+err.Error(), r.URL.Path))
+		return
+	}
+
+	scenario := database.Scenario{}
+	if result := h.db.First(&scenario, id); result.Error != nil {
+		apierrors.WriteError(w, apierrors.NewDatabaseError(result.Error, r.URL.Path))
+		return
+	}
+
+	if scenario.Status == database.StatusInactive {
+		apierrors.WriteError(w, apierrors.NewBadRequestError("Scenario is already deactivated", r.URL.Path))
+		return
+	}
+
+	scenario.Status = database.StatusInactive
+	result := h.db.Save(&scenario)
+	if result.Error != nil {
+		apierrors.WriteError(w, apierrors.NewDatabaseError(result.Error, r.URL.Path))
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *ScenarioHandler) CompleteScenario(w http.ResponseWriter, r *http.Request) {
+	id, err := utils.ParseID(r)
+	if err != nil {
+		apierrors.WriteError(w, apierrors.NewBadRequestError("Invalid scenario ID: "+err.Error(), r.URL.Path))
+		return
+	}
+
+	scenario := database.Scenario{}
+	if result := h.db.First(&scenario, id); result.Error != nil {
+		apierrors.WriteError(w, apierrors.NewDatabaseError(result.Error, r.URL.Path))
+		return
+	}
+
+	if scenario.Status == database.StatusCompleted {
+		apierrors.WriteError(w, apierrors.NewBadRequestError("Scenario is already completed", r.URL.Path))
+		return
+	}
+
+	scenario.Status = database.StatusCompleted
+	result := h.db.Save(&scenario)
+	if result.Error != nil {
+		apierrors.WriteError(w, apierrors.NewDatabaseError(result.Error, r.URL.Path))
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }

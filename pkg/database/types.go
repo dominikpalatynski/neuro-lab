@@ -7,9 +7,9 @@ import (
 type Status string
 
 const (
-	StatusPending  Status = "PENDING"
-	StatusActive   Status = "ACTIVE"
-	StatusInactive Status = "INACTIVE"
+	StatusCompleted Status = "COMPLETE"
+	StatusActive    Status = "ACTIVE"
+	StatusInactive  Status = "INACTIVE"
 )
 
 type Device struct {

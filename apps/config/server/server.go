@@ -9,16 +9,16 @@ import (
 )
 
 type Server struct {
-	db                         *gorm.DB
-	router                     *chi.Mux
-	deviceHandler              *handlers.DeviceHandler
-	testSessionHandler         *handlers.TestSessionHandler
-	conditionHandler           *handlers.ConditionHandler
-	conditionValueHandler      *handlers.ConditionValueHandler
-	scenarioHandler            *handlers.ScenarioHandler
-	scenarioConditionHandler   *handlers.ScenarioConditionHandler
-	scenarioValidationHandler  *handlers.ScenarioValidationHandler
-	discoveryHandler           *handlers.DiscoveryHandler
+	db                        *gorm.DB
+	router                    *chi.Mux
+	deviceHandler             *handlers.DeviceHandler
+	testSessionHandler        *handlers.TestSessionHandler
+	conditionHandler          *handlers.ConditionHandler
+	conditionValueHandler     *handlers.ConditionValueHandler
+	scenarioHandler           *handlers.ScenarioHandler
+	scenarioConditionHandler  *handlers.ScenarioConditionHandler
+	scenarioValidationHandler *handlers.ScenarioValidationHandler
+	discoveryHandler          *handlers.DiscoveryHandler
 }
 
 func NewServer(db *gorm.DB, r *chi.Mux) *Server {
@@ -96,6 +96,9 @@ func (s *Server) Start() {
 			r.Delete("/{id}", s.scenarioHandler.DeleteScenario)
 			r.Get("/{id}", s.scenarioHandler.GetScenario)
 			r.Get("/list/{testSessionID}", s.scenarioHandler.GetScenariosByTestSession)
+			r.Post("/activate/{id}", s.scenarioHandler.ActivateScenario)
+			r.Post("/deactivate/{id}", s.scenarioHandler.DeactivateScenario)
+			r.Post("/complete/{id}", s.scenarioHandler.CompleteScenario)
 		})
 
 		r.Route("/scenario-condition", func(r chi.Router) {
