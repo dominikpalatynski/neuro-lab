@@ -45,6 +45,18 @@ var (
 	)
 )
 
+const (
+	// Sample interval calculation:
+	// 50 samples per batch, batches arrive every 80ms
+	// samples_per_second = 50 / 0.08 = 625 Hz
+	// interval = 1000ms / 625 = 1.6ms per sample (rounded to 2ms)
+	sampleIntervalMs = 2
+)
+
+func getTimestamp(index float64, startTime time.Time, frequency float64) time.Time {
+	return startTime.Add(time.Duration(index*frequency) * time.Millisecond)
+}
+
 func StartMetricsServer(port string) {
 	go func() {
 		http.Handle("/metrics", promhttp.Handler())
@@ -100,73 +112,96 @@ func readWithReader(db *gorm.DB, topic string, groupID string) {
 			continue
 		}
 
-		deviceID := "1"
-		scenarioID := "1"
+		deviceID := rawData.DeviceID
+		scenarioID := rawData.ScenarioID
+		frameID := rawData.FrameID
 
+		timestamp, err := time.Parse("2006-01-02 15:04:05.000000", rawData.Timestamp)
+		if err != nil {
+			fmt.Println("could not parse timestamp:", err)
+			continue
+		}
 		// Process all channels
 		metrics := []ProcessedSample{}
-		for _, value := range rawData.Data.AccX {
+
+		for index, value := range rawData.Data.AccX {
 			metrics = append(metrics, ProcessedSample{
 				DeviceID:   deviceID,
+				ScenarioID: scenarioID,
+				FrameID:    frameID,
 				MetricName: "acc_x",
 				Value:      float64(value),
-				ScenarioID: scenarioID,
+				Timestamp:  getTimestamp(float64(index), timestamp, sampleIntervalMs),
 			})
 		}
-		for _, value := range rawData.Data.AccY {
+		for index, value := range rawData.Data.AccY {
 			metrics = append(metrics, ProcessedSample{
 				DeviceID:   deviceID,
+				ScenarioID: scenarioID,
+				FrameID:    frameID,
 				MetricName: "acc_y",
 				Value:      float64(value),
-				ScenarioID: scenarioID,
+				Timestamp:  getTimestamp(float64(index), timestamp, sampleIntervalMs),
 			})
 		}
-		for _, value := range rawData.Data.AccZ {
+		for index, value := range rawData.Data.AccZ {
 			metrics = append(metrics, ProcessedSample{
 				DeviceID:   deviceID,
+				ScenarioID: scenarioID,
+				FrameID:    frameID,
 				MetricName: "acc_z",
 				Value:      float64(value),
-				ScenarioID: scenarioID,
+				Timestamp:  getTimestamp(float64(index), timestamp, sampleIntervalMs),
 			})
 		}
-		for _, value := range rawData.Data.GyroX {
+		for index, value := range rawData.Data.GyroX {
 			metrics = append(metrics, ProcessedSample{
 				DeviceID:   deviceID,
+				ScenarioID: scenarioID,
+				FrameID:    frameID,
 				MetricName: "gyro_x",
 				Value:      float64(value),
-				ScenarioID: scenarioID,
+				Timestamp:  getTimestamp(float64(index), timestamp, sampleIntervalMs),
 			})
 		}
-		for _, value := range rawData.Data.GyroY {
+		for index, value := range rawData.Data.GyroY {
 			metrics = append(metrics, ProcessedSample{
 				DeviceID:   deviceID,
+				ScenarioID: scenarioID,
+				FrameID:    frameID,
 				MetricName: "gyro_y",
 				Value:      float64(value),
-				ScenarioID: scenarioID,
+				Timestamp:  getTimestamp(float64(index), timestamp, sampleIntervalMs),
 			})
 		}
-		for _, value := range rawData.Data.GyroZ {
+		for index, value := range rawData.Data.GyroZ {
 			metrics = append(metrics, ProcessedSample{
 				DeviceID:   deviceID,
+				ScenarioID: scenarioID,
+				FrameID:    frameID,
 				MetricName: "gyro_z",
 				Value:      float64(value),
-				ScenarioID: scenarioID,
+				Timestamp:  getTimestamp(float64(index), timestamp, sampleIntervalMs),
 			})
 		}
-		for _, value := range rawData.Data.CurrV {
+		for index, value := range rawData.Data.CurrV {
 			metrics = append(metrics, ProcessedSample{
 				DeviceID:   deviceID,
+				ScenarioID: scenarioID,
+				FrameID:    frameID,
 				MetricName: "curr_v",
 				Value:      float64(value),
-				ScenarioID: scenarioID,
+				Timestamp:  getTimestamp(float64(index), timestamp, sampleIntervalMs),
 			})
 		}
-		for _, value := range rawData.Data.Temp {
+		for index, value := range rawData.Data.Temp {
 			metrics = append(metrics, ProcessedSample{
 				DeviceID:   deviceID,
+				ScenarioID: scenarioID,
+				FrameID:    frameID,
 				MetricName: "temp",
 				Value:      float64(value),
-				ScenarioID: scenarioID,
+				Timestamp:  getTimestamp(float64(index), timestamp, sampleIntervalMs),
 			})
 		}
 

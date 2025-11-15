@@ -8,15 +8,20 @@ import (
 
 type ProcessedSample struct {
 	gorm.Model
-	DeviceID   string    `json:"device_id"`
-	ScenarioID string    `json:"scenario_id"`
+	DeviceID   uint      `json:"device_id"`
+	ScenarioID uint      `json:"scenario_id"`
+	FrameID    uint      `json:"frame_id"`
 	MetricName string    `json:"metric_name"`
 	Value      float64   `json:"value"`
 	Timestamp  time.Time `json:"timestamp"`
 }
 
 type RawData struct {
-	Data SensorData `json:"data"`
+	Data       SensorData `json:"data"`
+	DeviceID   uint       `json:"device_id"`
+	ScenarioID uint       `json:"scenario_id"`
+	Timestamp  string     `json:"timestamp"`
+	FrameID    uint       `json:"frame_id"`
 }
 
 type SensorData struct {

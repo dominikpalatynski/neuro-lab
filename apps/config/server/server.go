@@ -3,8 +3,12 @@ package server
 import (
 	"config/handlers"
 
+	"context"
+	"fmt"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	kafka "github.com/segmentio/kafka-go"
 	"gorm.io/gorm"
 )
 
@@ -19,9 +23,25 @@ type Server struct {
 	scenarioConditionHandler  *handlers.ScenarioConditionHandler
 	scenarioValidationHandler *handlers.ScenarioValidationHandler
 	discoveryHandler          *handlers.DiscoveryHandler
+	exportHandler             *handlers.ExportHandler
 }
 
+func connect(topic string, partition int) (*kafka.Conn, error) {
+	conn, err := kafka.DialLeader(context.Background(), "tcp",
+		"localhost:19092", topic, partition)
+	if err != nil {
+		fmt.Println("failed to dial leader", err)
+	}
+	return conn, err
+} //end connect
+
 func NewServer(db *gorm.DB, r *chi.Mux) *Server {
+
+	kafkaConn, err := connect("export.notification", 0)
+	if err != nil {
+		panic(err)
+	}
+
 	deviceHandler := handlers.NewDeviceHandler(db)
 	testSessionHandler := handlers.NewTestSessionHandler(db)
 	conditionHandler := handlers.NewConditionHandler(db)
@@ -30,7 +50,7 @@ func NewServer(db *gorm.DB, r *chi.Mux) *Server {
 	scenarioConditionHandler := handlers.NewScenarioConditionHandler(db)
 	scenarioValidationHandler := handlers.NewScenarioValidationHandler(db)
 	discoveryHandler := handlers.NewDiscoveryHandler(db)
-
+	exportHandler := handlers.NewExportHandler(kafkaConn, db)
 	return &Server{
 		db:                        db,
 		router:                    r,
@@ -42,6 +62,7 @@ func NewServer(db *gorm.DB, r *chi.Mux) *Server {
 		scenarioConditionHandler:  scenarioConditionHandler,
 		scenarioValidationHandler: scenarioValidationHandler,
 		discoveryHandler:          discoveryHandler,
+		exportHandler:             exportHandler,
 	}
 }
 
@@ -55,7 +76,7 @@ func (s *Server) Start() {
 		})
 
 		r.Post("/scenario-validation", s.scenarioValidationHandler.ValidateScenario)
-
+		r.Post("/export/{id}", s.exportHandler.ExportData)
 		r.Route("/device", func(r chi.Router) {
 			r.Post("/", s.deviceHandler.CreateDevice)
 			r.Put("/{id}", s.deviceHandler.UpdateDevice)

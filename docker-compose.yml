@@ -107,6 +107,27 @@ services:
       networks:
         - neuro-lab-network
       restart: always
+  minio:
+      container_name: minio_server
+      image: quay.io/minio/minio:RELEASE.2025-07-23T15-54-02Z
+      ports:
+        - "9000:9000"
+        - "9001:9001"
+      networks:
+        - neuro-lab-network
+      volumes:
+        - ./docker/minio/data:/data
+        - ./docker/minio/config:/root/.minio
+      environment:
+        MINIO_ROOT_USER: minioadmin
+        MINIO_ROOT_PASSWORD: minioadmin
+      command: server /data --console-address ":9001"
+      healthcheck:
+        test: ["CMD", "mc", "ready", "local"]
+        interval: 5s
+        timeout: 5s
+        retries: 5
+      restart: unless-stopped
 networks:
   neuro-lab-network:
     driver: bridge

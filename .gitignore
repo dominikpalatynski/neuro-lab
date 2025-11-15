@@ -14,3 +14,6 @@ docker/redpanda/data/
 
 #prometheus
 docker/prometheus/data/
+
+#minio
+docker/minio/data/

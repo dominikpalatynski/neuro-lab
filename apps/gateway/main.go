@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"sync/atomic"
 	"time"
 
 	"communication"
@@ -13,10 +14,15 @@ import (
 	kafka "github.com/segmentio/kafka-go"
 )
 
+// Global atomic counter for frame IDs
+var frameCounter atomic.Uint64
+
 type SensorData struct {
 	Data       Data   `json:"data"`
-	DeviceID   string `json:"device_id"`
+	DeviceID   int    `json:"device_id"`
 	ScenarioID int    `json:"scenario_id"`
+	Timestamp  string `json:"timestamp"`
+	FrameID    int    `json:"frame_id"`
 }
 
 type Data struct {
@@ -99,6 +105,9 @@ func processMessage(msg []byte) (*SensorData, error) {
 		return nil, fmt.Errorf("error sending request: %v", resp.Body)
 	}
 
+	// Use nanosecond precision and format to microseconds to ensure unique timestamps
+	now := time.Now()
+	sensorData.Timestamp = now.Format("2006-01-02 15:04:05.") + fmt.Sprintf("%06d", now.Nanosecond()/1000)
 	return &sensorData, nil
 }
 
@@ -128,6 +137,7 @@ func main() {
 			return
 		}
 		fmt.Println("Sensor data:", sensorData)
+		sensorData.FrameID = int(frameCounter.Add(1))
 		sendViaKafka(conn, sensorData)
 	})
 

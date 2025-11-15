@@ -1,6 +1,8 @@
 package database
 
 import (
+	"time"
+
 	"gorm.io/gorm"
 )
 
@@ -52,4 +54,14 @@ type ScenarioCondition struct {
 	Scenario         *Scenario       `gorm:"foreignKey:ScenarioID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT" json:"Scenario,omitempty"`
 	ConditionValueID uint            `json:"condition_value_id" validate:"required"`
 	ConditionValue   *ConditionValue `gorm:"foreignKey:ConditionValueID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT" json:"ConditionValue,omitempty"`
+}
+
+type ProcessedSample struct {
+	gorm.Model
+	DeviceID   uint      `json:"device_id"`
+	ScenarioID uint      `json:"scenario_id"`
+	FrameID    uint      `json:"frame_id"`
+	MetricName string    `json:"metric_name"`
+	Value      float64   `json:"value"`
+	Timestamp  time.Time `json:"timestamp"`
 }

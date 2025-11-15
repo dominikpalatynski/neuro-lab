@@ -60,7 +60,7 @@ var createDeviceCmd = &cobra.Command{
 			return
 		}
 
-		fmt.Println("Response: ", deviceResponse)
+		fmt.Println(string(resp.Body))
 	},
 }
 
@@ -102,7 +102,7 @@ var createTestSessionCmd = &cobra.Command{
 			return
 		}
 
-		fmt.Println("Response: ", testSessionResponse)
+		fmt.Println(string(resp.Body))
 	},
 }
 
