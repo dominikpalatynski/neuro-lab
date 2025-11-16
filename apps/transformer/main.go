@@ -14,35 +14,12 @@ import (
 	"database"
 
 	"log"
-	"net/http"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	kafka "github.com/segmentio/kafka-go"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/metric"
 	"gorm.io/gorm"
-)
-
-var (
-	// Histogram to measure operation duration
-	operationDuration = promauto.NewHistogramVec(
-		prometheus.HistogramOpts{
-			Name:    "kafka_event_processing_duration_seconds",
-			Help:    "Duration of Kafka event processing in seconds",
-			Buckets: prometheus.DefBuckets, // Default buckets: 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10
-		},
-		[]string{"topic", "status"}, // Labels for filtering
-	)
-
-	// Counter for total processed events
-	eventsProcessed = promauto.NewCounterVec(
-		prometheus.CounterOpts{
-			Name: "kafka_events_processed_total",
-			Help: "Total number of Kafka events processed",
-		},
-		[]string{"topic", "status"},
-	)
 )
 
 const (
@@ -53,18 +30,14 @@ const (
 	sampleIntervalMs = 2
 )
 
+var (
+	meter                         metric.Meter
+	dbSaveDuration                metric.Int64Histogram
+	transformerProcessingDuration metric.Int64Histogram
+)
+
 func getTimestamp(index float64, startTime time.Time, frequency float64) time.Time {
 	return startTime.Add(time.Duration(index*frequency) * time.Millisecond)
-}
-
-func StartMetricsServer(port string) {
-	go func() {
-		http.Handle("/metrics", promhttp.Handler())
-		log.Printf("Starting metrics server on :%s", port)
-		if err := http.ListenAndServe(":"+port, nil); err != nil {
-			log.Fatalf("Failed to start metrics server: %v", err)
-		}
-	}()
 }
 
 func processAll(dbConnection *gorm.DB, metrics *[]ProcessedSample) {
@@ -77,7 +50,16 @@ func processAll(dbConnection *gorm.DB, metrics *[]ProcessedSample) {
 }
 
 func main() {
-	StartMetricsServer("9091")
+	ctx := context.Background()
+	shutdown, err := setupOTelSDK(ctx)
+	if err != nil {
+		log.Fatalf("failed to setup opentelemetry: %v", err)
+	}
+	defer func() {
+		if err := shutdown(ctx); err != nil {
+			log.Fatalf("failed to shutdown opentelemetry: %v", err)
+		}
+	}()
 	topic := "gateway.raw"
 	db := database.Connect()
 	db.AutoMigrate(&ProcessedSample{})
@@ -95,11 +77,31 @@ func readWithReader(db *gorm.DB, topic string, groupID string) {
 		MaxBytes: 100, //per message
 		// more options are available
 	})
+	var err error
+	meter = otel.Meter("neuro-lab.transformer")
+
+	transformerProcessingDuration, err = meter.Int64Histogram(
+		"transformer.processing.duration",
+		metric.WithDescription("Duration of transformer processing."),
+		metric.WithUnit("ms"),
+	)
+	if err != nil {
+		log.Fatalf("failed to create transformer processing duration histogram: %v", err)
+	}
+
+	dbSaveDuration, err = meter.Int64Histogram(
+		"transformer.db.save.duration",
+		metric.WithDescription("Duration of database saving."),
+		metric.WithUnit("ms"),
+	)
+	if err != nil {
+		log.Fatalf("failed to create database save duration histogram: %v", err)
+	}
 
 	fmt.Println("Consumer is running, waiting for messages...")
 	for {
+		transformerProcessingDurationStart := time.Now()
 		msg, err := r.ReadMessage(context.Background())
-		start := time.Now()
 		if err != nil {
 			fmt.Println("could not read message:", err)
 			break
@@ -205,10 +207,10 @@ func readWithReader(db *gorm.DB, topic string, groupID string) {
 			})
 		}
 
+		dbSaveDurationStart := time.Now()
 		processAll(db, &metrics)
-		duration := float64(time.Since(start).Milliseconds())
-		operationDuration.WithLabelValues(topic, "success").Observe(duration)
-		eventsProcessed.WithLabelValues(topic, "success").Inc()
+		dbSaveDuration.Record(context.Background(), int64(time.Since(dbSaveDurationStart).Milliseconds()))
+		transformerProcessingDuration.Record(context.Background(), int64(time.Since(transformerProcessingDurationStart).Milliseconds()))
 	}
 
 	if err := r.Close(); err != nil {

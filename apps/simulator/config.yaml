@@ -1,0 +1,18 @@
+interval: 80
+devices:
+  - scenario_id: 19
+    device_id: 1
+  - scenario_id: 18
+    device_id: 1
+  - scenario_id: 17
+    device_id: 1
+  - scenario_id: 16
+    device_id: 1
+  - scenario_id: 15
+    device_id: 1
+  - scenario_id: 14
+    device_id: 1
+  - scenario_id: 13
+    device_id: 1
+  - scenario_id: 12
+    device_id: 1

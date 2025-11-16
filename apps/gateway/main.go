@@ -21,8 +21,10 @@ import (
 // Global atomic counter for frame IDs
 var frameCounter atomic.Uint64
 var (
-	meter          metric.Meter
-	messageCounter metric.Int64Counter
+	meter              metric.Meter
+	messageCounter     metric.Int64Counter
+	gatewayDuration    metric.Int64Histogram
+	validationDuration metric.Int64Histogram
 )
 
 type SensorData struct {
@@ -96,6 +98,7 @@ func processMessage(msg []byte) (*SensorData, error) {
 		return nil, fmt.Errorf("error marshalling request: %v", marshalErr)
 	}
 
+	start := time.Now()
 	resp, httpErr := communication.SendRequest("POST", "http://localhost:3002/api/v1/scenario-validation", reqBytes)
 	if httpErr != nil {
 		fmt.Println("Error sending request:", httpErr)
@@ -112,6 +115,12 @@ func processMessage(msg []byte) (*SensorData, error) {
 		}
 		return nil, fmt.Errorf("error sending request: %v", resp.Body)
 	}
+
+	if err != nil {
+		fmt.Println("Error converting duration:", err)
+		return nil, fmt.Errorf("error converting duration: %v", err)
+	}
+	validationDuration.Record(context.Background(), int64(time.Duration(time.Since(start).Milliseconds())))
 
 	// Use nanosecond precision and format to microseconds to ensure unique timestamps
 	now := time.Now()
@@ -141,6 +150,24 @@ func main() {
 		log.Fatalf("failed to create message counter: %v", err)
 	}
 
+	gatewayDuration, err = meter.Int64Histogram(
+		"gateway.duration",
+		metric.WithDescription("Duration of gateway processing."),
+		metric.WithUnit("ms"),
+	)
+	if err != nil {
+		log.Fatalf("failed to create gateway duration histogram: %v", err)
+	}
+
+	validationDuration, err = meter.Int64Histogram(
+		"validation.duration",
+		metric.WithDescription("Duration of validation processing."),
+		metric.WithUnit("ms"),
+	)
+	if err != nil {
+		log.Fatalf("failed to create validation duration histogram: %v", err)
+	}
+
 	opts := mqtt.NewClientOptions().AddBroker("localhost:1884")
 	opts.SetClientID("go_mqtt_client")
 
@@ -159,8 +186,8 @@ func main() {
 
 	// Subscribe
 	client.Subscribe("device/+/raw", 0, func(client mqtt.Client, msg mqtt.Message) {
+		start := time.Now()
 		messageCounter.Add(ctx, 1)
-		fmt.Printf("Received message on topic %s: %s\n", msg.Topic(), msg.Payload())
 		sensorData, err := processMessage(msg.Payload())
 		if err != nil {
 			fmt.Println("Error processing message:", err)
@@ -169,6 +196,9 @@ func main() {
 		fmt.Println("Sensor data:", sensorData)
 		sensorData.FrameID = int(frameCounter.Add(1))
 		sendViaKafka(conn, sensorData)
+		duration := int64(time.Since(start).Milliseconds())
+		fmt.Printf("Gateway duration: %dms\n", duration)
+		gatewayDuration.Record(ctx, duration)
 	})
 
 	// Keep the client running
