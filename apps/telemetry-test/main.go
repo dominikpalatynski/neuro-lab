@@ -1,29 +1,31 @@
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
+
+// Instrumented provides an example rolldice service that is instrumented with
+// OpenTelemetry.
 package main
 
 import (
-	"net/http"
-
-	"config/server"
-	"database"
-
 	"context"
 	"errors"
+	"log"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"time"
 
-	"github.com/go-chi/chi/v5"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 func main() {
 	if err := run(); err != nil {
-		panic(err)
+		log.Fatalln(err)
 	}
 }
 
 func run() error {
+	// Handle SIGINT (CTRL+C) gracefully.
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 
@@ -37,28 +39,18 @@ func run() error {
 		err = errors.Join(err, otelShutdown(context.Background()))
 	}()
 
-	// Set up router, database and app server.
-	r := chi.NewRouter()
-	db := database.Connect()
-	db.AutoMigrate(&database.Device{}, &database.TestSession{}, &database.Scenario{}, &database.ScenarioCondition{}, &database.ConditionValue{})
-
-	appSrv := server.NewServer(db, r)
-	appSrv.Start()
-
 	// Start HTTP server.
 	srv := &http.Server{
-		Addr:         ":3002",
-		BaseContext:  func(_ net.Listener) context.Context { return ctx },
+		Addr:         ":8082",
+		BaseContext:  func(net.Listener) context.Context { return ctx },
 		ReadTimeout:  time.Second,
 		WriteTimeout: 10 * time.Second,
-		Handler:      otelhttp.NewHandler(r, "/"),
+		Handler:      newHTTPHandler(),
 	}
 	srvErr := make(chan error, 1)
 	go func() {
 		srvErr <- srv.ListenAndServe()
 	}()
-
-	InitMetrics()
 
 	// Wait for interruption.
 	select {
@@ -74,4 +66,16 @@ func run() error {
 	// When Shutdown is called, ListenAndServe immediately returns ErrServerClosed.
 	err = srv.Shutdown(context.Background())
 	return err
+}
+
+func newHTTPHandler() http.Handler {
+	mux := http.NewServeMux()
+
+	// Register handlers.
+	mux.Handle("/rolldice", http.HandlerFunc(rolldice))
+	mux.Handle("/rolldice/{player}", http.HandlerFunc(rolldice))
+
+	// Add HTTP instrumentation for the whole server.
+	handler := otelhttp.NewHandler(mux, "/")
+	return handler
 }

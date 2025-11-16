@@ -16,9 +16,7 @@ import (
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/log"
 	"go.opentelemetry.io/otel/sdk/metric"
-	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
 )
 
 // setupOTelSDK bootstraps the OpenTelemetry pipeline.
@@ -92,19 +90,7 @@ func newtracerProvider() (*trace.TracerProvider, error) {
 		return nil, err
 	}
 
-	res, err := resource.New(
-		context.Background(),
-		resource.WithAttributes(
-			semconv.ServiceName("config"),
-			semconv.ServiceVersion("0.1.0"),
-		),
-	)
-	if err != nil {
-		return nil, err
-	}
-
 	tracerProvider := trace.NewTracerProvider(
-		trace.WithResource(res),
 		trace.WithBatcher(traceExporter,
 			// Default is 5s. Set to 1s for demonstrative purposes.
 			trace.WithBatchTimeout(time.Second)),
@@ -125,19 +111,7 @@ func newMeterProvider() (*metric.MeterProvider, error) {
 		return nil, err
 	}
 
-	res, err := resource.New(
-		context.Background(),
-		resource.WithAttributes(
-			semconv.ServiceName("config"),
-			semconv.ServiceVersion("0.1.0"),
-		),
-	)
-	if err != nil {
-		return nil, err
-	}
-
 	meterProvider := metric.NewMeterProvider(
-		metric.WithResource(res),
 		metric.WithReader(metric.NewPeriodicReader(metricExporter,
 			// Default is 1m. Set to 3s for demonstrative purposes.
 			metric.WithInterval(3*time.Second))),

@@ -5,6 +5,7 @@ use (
 	./apps/config
 	./apps/exporter
 	./apps/gateway
+	./apps/telemetry-test
 	./apps/transformer
 	./pkg/communication
 	./pkg/database

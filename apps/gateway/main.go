@@ -8,6 +8,10 @@ import (
 	"communication"
 	"context"
 	"encoding/json"
+	"log"
+
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/metric"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	apierrors "github.com/neuro-lab/errors"
@@ -16,6 +20,10 @@ import (
 
 // Global atomic counter for frame IDs
 var frameCounter atomic.Uint64
+var (
+	meter          metric.Meter
+	messageCounter metric.Int64Counter
+)
 
 type SensorData struct {
 	Data       Data   `json:"data"`
@@ -112,6 +120,27 @@ func processMessage(msg []byte) (*SensorData, error) {
 }
 
 func main() {
+	ctx := context.Background()
+	shutdown, err := setupOTelSDK(ctx)
+	if err != nil {
+		log.Fatalf("failed to setup opentelemetry: %v", err)
+	}
+	defer func() {
+		if err := shutdown(ctx); err != nil {
+			log.Fatalf("failed to shutdown opentelemetry: %v", err)
+		}
+	}()
+
+	meter = otel.Meter("neuro-lab.gateway")
+	messageCounter, err = meter.Int64Counter(
+		"mqtt.messages.received",
+		metric.WithDescription("Number of MQTT messages received."),
+		metric.WithUnit("{message}"),
+	)
+	if err != nil {
+		log.Fatalf("failed to create message counter: %v", err)
+	}
+
 	opts := mqtt.NewClientOptions().AddBroker("localhost:1884")
 	opts.SetClientID("go_mqtt_client")
 
@@ -130,6 +159,7 @@ func main() {
 
 	// Subscribe
 	client.Subscribe("device/+/raw", 0, func(client mqtt.Client, msg mqtt.Message) {
+		messageCounter.Add(ctx, 1)
 		fmt.Printf("Received message on topic %s: %s\n", msg.Topic(), msg.Payload())
 		sensorData, err := processMessage(msg.Payload())
 		if err != nil {

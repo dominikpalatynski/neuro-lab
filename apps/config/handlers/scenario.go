@@ -8,11 +8,32 @@ import (
 	"types"
 
 	"config/utils"
+	"math/rand"
 
 	"github.com/go-chi/chi/v5"
-	apierrors "github.com/neuro-lab/errors"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 	"gorm.io/gorm"
+
+	apierrors "github.com/neuro-lab/errors"
 )
+
+var (
+	meter       = otel.Meter("config.scenario")
+	scenarioCnt metric.Int64Counter
+)
+
+func init() {
+	var err error
+	scenarioCnt, err = meter.Int64Counter("scenario.created",
+		metric.WithDescription("The number of scenarios created"),
+		metric.WithUnit("{scenario}"))
+	if err != nil {
+		panic(err)
+	}
+	println("Scenario counter initialized")
+}
 
 type ScenarioHandler struct {
 	db *gorm.DB
@@ -59,6 +80,7 @@ func (h *ScenarioHandler) CreateScenario(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	scenarioCnt.Add(r.Context(), int64(rand.Intn(6)), metric.WithAttributes(attribute.String("test_session_id", strconv.FormatUint(uint64(req.TestSessionID), 10)), attribute.String("scenario_id", strconv.FormatUint(uint64(scenario.ID), 10))))
 	w.WriteHeader(http.StatusCreated)
 
 	if err := json.NewEncoder(w).Encode(scenario); err != nil {
