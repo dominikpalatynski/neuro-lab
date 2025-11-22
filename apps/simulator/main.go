@@ -12,6 +12,8 @@ import (
 	"go.yaml.in/yaml/v2"
 )
 
+var channelNames = []string{"acc_x", "acc_y", "acc_z", "gyro_x", "gyro_y", "gyro_z", "curr_v", "temp"}
+
 type Config struct {
 	Interval int            `yaml:"interval"`
 	Devices  []DeviceConfig `yaml:"devices"`
@@ -23,9 +25,9 @@ type DeviceConfig struct {
 }
 
 type SensorData struct {
-	ScenarioID int  `json:"scenario_id"`
-	DeviceID   int  `json:"device_id"`
-	Data       Data `json:"data"`
+	ScenarioID int           `json:"scenario_id"`
+	DeviceID   int           `json:"device_id"`
+	Data       []ChannelData `json:"data"`
 }
 
 type Data struct {
@@ -39,21 +41,20 @@ type Data struct {
 	Temp  []float64 `json:"temp"`
 }
 
-func generateSensorData(scenarioID int, deviceID int, data []float64) SensorData {
-	return SensorData{
-		ScenarioID: 19,
-		DeviceID:   1,
-		Data: Data{
-			AccX:  data,
-			AccY:  data,
-			AccZ:  data,
-			GyroX: data,
-			GyroY: data,
-			GyroZ: data,
-			CurrV: data,
-			Temp:  data,
-		},
+type ChannelData struct {
+	Values      []float64 `json:"values"`
+	ChannelName string    `json:"channel_name"`
+}
+
+func generateSensorData(data []float64) []ChannelData {
+	channelData := []ChannelData{}
+	for _, channelName := range channelNames {
+		channelData = append(channelData, ChannelData{
+			Values:      data,
+			ChannelName: channelName,
+		})
 	}
+	return channelData
 }
 
 func initMQTTClient() (mqtt.Client, error) {
@@ -93,10 +94,16 @@ func main() {
 					data = append(data, float64(start+i))
 				}
 				fmt.Printf("Sending data for Device ID: %d, Scenario ID: %d\n", device.DeviceID, device.ScenarioID)
-				jsonData, err := json.Marshal(generateSensorData(device.ScenarioID, device.DeviceID, data))
+				channelData := generateSensorData(data)
+				jsonData, err := json.Marshal(SensorData{
+					ScenarioID: device.ScenarioID,
+					DeviceID:   device.DeviceID,
+					Data:       channelData,
+				})
 				if err != nil {
 					log.Fatalf("Failed to marshal data: %v", err)
 				}
+
 				token := client.Publish("device/"+strconv.Itoa(device.DeviceID)+"/raw", 0, false, jsonData)
 				token.Wait()
 				if token.Error() != nil {

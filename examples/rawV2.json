@@ -1,0 +1,38 @@
+{
+    "scenario_id": 1,
+    "device_id": 1,
+    "data": [
+        {
+            "channel_name": "acc_x",
+            "values": [1, 2, 3, 4, 5]
+        },
+        {
+            "channel_name": "acc_y",
+            "values": [1, 2, 3, 4, 5]
+        },
+        {
+            "channel_name": "acc_z",
+            "values": [1, 2, 3, 4, 5]
+        },
+        {
+            "channel_name": "gyro_x",
+            "values": [1, 2, 3, 4, 5]
+        },
+        {
+            "channel_name": "gyro_y",
+            "values": [1, 2, 3, 4, 5]
+        },
+        {
+            "channel_name": "gyro_z",
+            "values": [1, 2, 3, 4, 5]
+        },
+        {
+            "channel_name": "curr_v",
+            "values": [1, 2, 3, 4, 5]
+        },
+        {
+            "channel_name": "temp",
+            "values": [1, 2, 3, 4, 5]
+        }
+    ]
+}

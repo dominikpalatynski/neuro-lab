@@ -3,6 +3,11 @@ package database
 import (
 	"time"
 
+	"database/sql/driver"
+	"fmt"
+	"strconv"
+	"strings"
+
 	"gorm.io/gorm"
 )
 
@@ -64,4 +69,54 @@ type ProcessedSample struct {
 	MetricName string    `json:"metric_name"`
 	Value      float64   `json:"value"`
 	Timestamp  time.Time `json:"timestamp"`
+}
+
+type Float8Array []float64
+
+func (x *Float8Array) Scan(value any) error {
+	if value == nil {
+		*x = nil
+		return nil
+	}
+	str := value.(string)
+	if str == "{}" {
+		*x = []float64{}
+		return nil
+	}
+	str, _ = strings.CutPrefix(str, "{")
+	str, _ = strings.CutSuffix(str, "}")
+	parts := strings.Split(str, ",")
+	for _, s := range parts {
+		if s == "" || s == `""` {
+			panic("empty string is not a valid float64")
+		}
+		num, err := strconv.ParseFloat(s, 64)
+		if err != nil {
+			panic("not a valid float64")
+		}
+		*x = append(*x, num)
+	}
+	return nil
+}
+
+func (x Float8Array) Value() (driver.Value, error) {
+	if len(x) == 0 {
+		return "{}", nil
+	}
+	formatted := []string{}
+	for _, s := range x {
+		formatted = append(formatted, fmt.Sprint(s))
+	}
+	str := "{" + strings.Join(formatted, ",") + "}"
+	return str, nil
+}
+
+type ProcessedChannel struct {
+	gorm.Model
+	Values     Float8Array `json:"values" gorm:"type:double precision[]"`
+	Timestamp  time.Time   `json:"timestamp"`
+	FrameID    uint        `json:"frame_id"`
+	MetricName string      `json:"metric_name"`
+	DeviceID   uint        `json:"device_id"`
+	ScenarioID uint        `json:"scenario_id"`
 }
