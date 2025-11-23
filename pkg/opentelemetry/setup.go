@@ -69,7 +69,7 @@ func (s *OtelSdkSetup) newMeterProvider() (*metric.MeterProvider, error) {
 	ctx := context.Background()
 	metricExporter, err := otlpmetrichttp.New(
 		ctx,
-		otlpmetrichttp.WithEndpoint("localhost:4318"),
+		otlpmetrichttp.WithEndpoint("192.168.18.23:30572"),
 		otlpmetrichttp.WithInsecure(),
 	)
 	if err != nil {

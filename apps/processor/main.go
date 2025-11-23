@@ -30,7 +30,7 @@ func init() {
 func main() {
 	db = database.Connect()
 	db.AutoMigrate(&database.ProcessedChannel{})
-	opts := mqtt.NewClientOptions().AddBroker("localhost:1884")
+	opts := mqtt.NewClientOptions().AddBroker("192.168.18.23:31095")
 	opts.SetClientID("go_mqtt_client")
 	ctx := context.Background()
 	meter = otel.Meter("neuro-lab.processor")

@@ -58,7 +58,7 @@ func generateSensorData(data []float64) []ChannelData {
 }
 
 func initMQTTClient() (mqtt.Client, error) {
-	opts := mqtt.NewClientOptions().AddBroker("localhost:1884")
+	opts := mqtt.NewClientOptions().AddBroker("192.168.18.23:31095")
 	opts.SetClientID("simulator_mqtt_client")
 
 	client := mqtt.NewClient(opts)
