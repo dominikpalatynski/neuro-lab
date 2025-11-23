@@ -13,6 +13,8 @@ import (
 	"os/signal"
 	"time"
 
+	"opentelemetry"
+
 	"github.com/go-chi/chi/v5"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
@@ -27,8 +29,12 @@ func run() error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 
+	otelSdkSetup := opentelemetry.NewOtelSdkSetup(opentelemetry.SetupOTelSDKOptions{
+		ServiceName:    "config",
+		ServiceVersion: "0.1.0",
+	})
 	// Set up OpenTelemetry.
-	otelShutdown, err := setupOTelSDK(ctx)
+	otelShutdown, err := otelSdkSetup.Setup(ctx)
 	if err != nil {
 		return err
 	}

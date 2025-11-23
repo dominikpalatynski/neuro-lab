@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+namespace: {{ .Values.namespaceOverride }}
+metadata:
+  name: prometheus
+spec:
+  type: {{ .Values.service.type }}
+  selector:
+    app: prometheus
+  ports:
+    - name: prometheus
+      port: {{ .Values.service.port }}
+      targetPort: prometheus

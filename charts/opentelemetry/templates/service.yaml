@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+namespace: {{ .Values.namespaceOverride }}
+metadata:
+  name: opentelemetry-collector
+spec:
+  selector:
+    app: opentelemetry-collector
+  ports:
+    - name: otlp
+      port: {{ .Values.ports.otlp }}
+      targetPort: otlp
+    - name: prometheus
+      port: {{ .Values.ports.prometheus }}
+      targetPort: prometheus

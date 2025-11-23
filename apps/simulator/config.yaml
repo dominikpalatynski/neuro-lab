@@ -1,4 +1,4 @@
-interval: 1000
+interval: 80
 devices:
   - scenario_id: 19
     device_id: 1

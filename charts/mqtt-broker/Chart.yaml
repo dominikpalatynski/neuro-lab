@@ -1,0 +1,25 @@
+annotations:
+  artifacthub.io/images: |
+    - name: eclipse-mosquitto
+      image: docker.io/eclipse-mosquitto:2.0.18
+  artifacthub.io/links: |
+    - name: Chart source
+      url: https://github.com/janip81/helm-charts/tree/main/charts/mqtt-broker
+    - name: Docker image source
+      url: https://hub.docker.com/_/eclipse-mosquitto
+apiVersion: v2
+appVersion: 2.0.18
+description: A Helm chart for Eclipse Mosquitto
+home: https://mosquitto.org/
+icon: https://cdn2.steamgriddb.com/icon/d17892563a6984845a0e23df7841f903/32/256x256.png
+keywords:
+- mqtt
+maintainers:
+- email: jani@techmonkeys.se
+  name: janip81
+name: mqtt-broker
+sources:
+- https://github.com/janip81/helm-charts/tree/main/charts/mqtt-broker
+- https://github.com/eclipse/mosquitto
+type: application
+version: 0.1.2

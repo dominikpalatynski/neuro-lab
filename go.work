@@ -11,5 +11,6 @@ use (
 	./pkg/communication
 	./pkg/database
 	./pkg/errors
+	./pkg/opentelemetry
 	./pkg/types
 )

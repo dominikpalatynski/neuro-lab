@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+namespace: {{ .Values.namespaceOverride }}
+metadata:
+  name: opentelemetry-config
+data:
+  config.yaml: |
+    {{ .Values.config | toYaml | nindent 4 }}

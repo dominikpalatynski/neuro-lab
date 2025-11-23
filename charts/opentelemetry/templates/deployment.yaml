@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+namespace: {{ .Values.namespaceOverride }}
+metadata:
+  name: opentelemetry-collector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: opentelemetry-collector
+  template:
+    metadata:
+      labels:
+        app: opentelemetry-collector
+    spec:
+      containers:
+        - name: opentelemetry-collector
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args: ["--config=/etc/otel/config.yaml"]
+          ports:
+            - name: otlp
+              containerPort: {{ .Values.ports.otlp }}
+            - name: prometheus
+              containerPort: {{ .Values.ports.prometheus }}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/otel/config.yaml
+              subPath: config.yaml
+      volumes:
+        - name: config
+          configMap:
+            name: opentelemetry-config
