@@ -3,8 +3,10 @@ kind: Service
 namespace: {{ .Values.namespaceOverride }}
 metadata:
   name: prometheus
+  annotations:
+    metallb.io/loadBalancerIPs: {{ .Values.service.loadBalancerIP }}
 spec:
-  type: {{ .Values.service.type }}
+  type: LoadBalancer
   selector:
     app: prometheus
   ports:

@@ -22,3 +22,8 @@ upgrade-prometheus:
 
 uninstall-prometheus:
 	helm uninstall prometheus
+
+deploy-metallb:
+	helm repo add metallb https://metallb.github.io/metallb
+	helm repo update
+	helm install metallb metallb/metallb --set overrideNamespace=metallb
