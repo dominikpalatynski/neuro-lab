@@ -27,3 +27,12 @@ deploy-metallb:
 	helm repo add metallb https://metallb.github.io/metallb
 	helm repo update
 	helm install metallb metallb/metallb --set overrideNamespace=metallb
+
+deploy-grafana:
+	helm install grafana ./charts/grafana -f charts/grafana/values.yaml
+
+upgrade-grafana:
+	helm upgrade grafana ./charts/grafana -f charts/grafana/values.yaml
+
+uninstall-grafana:
+	helm uninstall grafana

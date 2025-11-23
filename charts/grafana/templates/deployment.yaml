@@ -4,17 +4,26 @@ metadata:
   name: grafana
   namespace: grafana
 spec:
-  containers:
-    - name: grafana
-      image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-      imagePullPolicy: IfNotPresent
-      ports:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      containers:
         - name: grafana
-          containerPort: {{ .Values.service.port }}
-      volumeMounts:
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: grafana
+              containerPort: {{ .Values.service.port }}
+          volumeMounts:
+            - name: grafana-data
+              mountPath: /var/lib/grafana
+      volumes:
         - name: grafana-data
-          mountPath: /var/lib/grafana
-  volumes:
-    - name: grafana-data
-      persistentVolumeClaim:
-        claimName: grafana-data
+          persistentVolumeClaim:
+            claimName: grafana-data
